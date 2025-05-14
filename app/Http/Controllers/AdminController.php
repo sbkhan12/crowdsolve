@@ -18,11 +18,36 @@ class AdminController extends Controller
     ]);
 }
 
-public function users()
+
+
+
+public function users(Request $request)
 {
-    $users = User::all();
+    $query = User::query();
+
+    // Filter by role
+    if ($request->filled('role')) {
+        $query->where('role', $request->role);
+    }
+    // Filter by name search
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
+    }
+
+    $users = $query->orderBy('name')->paginate(10)->withQueryString();
+
     return view('admin.users', compact('users'));
 }
+
+public function toggleBan(User $user)
+{
+    $user->is_banned = !$user->is_banned;
+    $user->save();
+
+    return redirect()->back()->with('success', 'User ' . ($user->is_banned ? 'banned' : 'unbanned') . ' successfully.');
+}
+
+// ...existing code...
 
 public function updateUserRole(Request $request, User $user)
 {

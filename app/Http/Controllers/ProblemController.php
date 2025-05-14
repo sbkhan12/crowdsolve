@@ -9,11 +9,24 @@ use Illuminate\Support\Facades\Storage;
 
 class ProblemController extends Controller
 {
-    public function index()
-    {
-        $problems = Problem::latest()->paginate(10);
-        return view('problems.index', compact('problems'));
+    public function index(Request $request)
+{
+    $query = \App\Models\Problem::query();
+
+    if ($request->filled('search')) {
+        $query->where('title', 'like', '%' . $request->search . '%');
     }
+
+    if ($request->filled('category')) {
+        $query->where('category', $request->category);
+    }
+
+    $problems = $query->latest()->paginate(6)->withQueryString();
+    $categories = ['infrastructure', 'environment', 'safety', 'public services'];
+
+    return view('problems.index', compact('problems', 'categories'));
+}
+
 
     public function create()
     {

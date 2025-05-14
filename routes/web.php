@@ -46,5 +46,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/problems/{problem}/status', [AdminController::class, 'updateStatus'])->name('admin.problems.status');
 });
 
+Route::get('/', function () {
+    return view('welcome', [
+        'totalProblems' => \App\Models\Problem::count(),
+        'solvedProblems' => \App\Models\Problem::where('status', 'resolved')->count(),
+        'activeUsers' => \App\Models\User::count(),
+    ]);
+});
+Route::post('/admin/users/{user}/ban', [AdminController::class, 'toggleBan'])->name('admin.users.toggleBan');
+Route::get('/admin/users', [AdminController::class, 'users'])->name('admin.users');
 
 require __DIR__.'/auth.php';
