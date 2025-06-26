@@ -3,11 +3,9 @@
 @section('header')
 <div class="flex items-center justify-between">
     <div>
-        <h2 class="text-3xl font-extrabold text-gray-900 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
+        <h2 class="text-3xl font-extrabold text-gray-900 leading-tight">🛡️ Admin Dashboard</h2>
         <p class="mt-2 text-sm text-gray-600">
-            👋 Welcome back, <span class="font-semibold">{{ auth()->user()->name }}</span>! Here's a live snapshot of platform activity.
+            👋 Welcome back, <span class="font-semibold">{{ auth()->user()->name }}</span>! Here’s the latest insights.
         </p>
     </div>
     <form method="POST" action="{{ route('logout') }}">
@@ -25,72 +23,111 @@
 
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Users -->
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-blue-500 flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm text-gray-500">Total Users</h3>
-                    <p class="text-3xl font-bold text-blue-600 mt-1">{{ $totalUsers }}</p>
-                </div>
-                <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M17 20h5v-2a4 4 0 00-4-4h-1m-6 6v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2h5m6 0h6"/>
-                </svg>
-            </div>
+            @php
+                $cards = [
+                    ['title' => 'Total Users', 'count' => $totalUsers, 'color' => 'blue', 'icon' => '👥'],
+                    ['title' => 'Total Problems', 'count' => $totalProblems, 'color' => 'red', 'icon' => '📌'],
+                    ['title' => 'Total Votes', 'count' => $totalVotes, 'color' => 'green', 'icon' => '👍'],
+                    ['title' => 'Total Comments', 'count' => $totalComments, 'color' => 'yellow', 'icon' => '💬'],
+                ];
+            @endphp
 
-            <!-- Problems -->
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-red-500 flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm text-gray-500">Total Problems</h3>
-                    <p class="text-3xl font-bold text-red-600 mt-1">{{ $totalProblems }}</p>
+            @foreach ($cards as $card)
+                <div class="bg-white p-6 rounded-xl shadow border-l-4 border-{{ $card['color'] }}-500 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm text-gray-500">{{ $card['title'] }}</h3>
+                        <p class="text-3xl font-bold text-{{ $card['color'] }}-600 mt-1">{{ $card['count'] }}</p>
+                    </div>
+                    <div class="text-3xl">{{ $card['icon'] }}</div>
                 </div>
-                <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M18.364 5.636l-1.414-1.414L12 9.172 7.05 4.222 5.636 5.636 10.586 10.586 5.636 15.536l1.414 1.414L12 12.828l4.95 4.95 1.414-1.414L13.414 10.586z"/>
-                </svg>
-            </div>
-
-            <!-- Votes -->
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-green-500 flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm text-gray-500">Total Votes</h3>
-                    <p class="text-3xl font-bold text-green-600 mt-1">{{ $totalVotes }}</p>
-                </div>
-                <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M14 9l-2 2-2-2m0 6l2-2 2 2M12 20c4.418 0 8-3.582 8-8s-3.582-8-8-8S4 7.582 4 12s3.582 8 8 8z"/>
-                </svg>
-            </div>
-
-            <!-- Comments -->
-            <div class="bg-white p-6 rounded-xl shadow border-l-4 border-yellow-500 flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm text-gray-500">Total Comments</h3>
-                    <p class="text-3xl font-bold text-yellow-600 mt-1">{{ $totalComments }}</p>
-                </div>
-                <svg class="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M7 8h10M7 12h4m1 8h2a2 2 0 002-2v-2.586a1 1 0 01.293-.707l3.707-3.707a1 1 0 000-1.414l-7-7a1 1 0 00-1.414 0l-7 7a1 1 0 000 1.414l3.707 3.707a1 1 0 01.293.707V18a2 2 0 002 2z"/>
-                </svg>
-            </div>
+            @endforeach
         </div>
 
         <!-- Admin Tools -->
-        @if(auth()->user()->role === 'admin')
         <div class="bg-white p-6 rounded-xl shadow border-t-4 border-indigo-500">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">🛠️ Admin Management Tools</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">🛠️ Admin Tools</h3>
             <ul class="text-sm text-indigo-700 space-y-2 list-disc list-inside">
-                <li><a href="/admin/users" class="hover:underline">👥 Manage Users</a></li>
-                <li><a href="/admin/problems" class="hover:underline">📌 Moderate Problems</a></li>
-                <li><a href="/admin/reports" class="hover:underline">🧾 Review Reports</a></li>
-                <li><a href="/admin/analytics" class="hover:underline">📊 View Site Analytics</a></li>
+                <li><a href="{{ route('admin.users') }}" class="hover:underline">👥 Manage Users</a></li>
+                <li><a href="{{ route('admin.problems') }}" class="hover:underline">📌 Moderate Problems</a></li>
+                <li><a href="{{ route('admin.reports') }}" class="hover:underline">🧾 Review Reports</a></li>
+                <li><a href="{{ route('admin.analytics') }}" class="hover:underline">📊 View Site Analytics</a></li>
             </ul>
         </div>
-        @endif
+
+        <!-- Top Contributors -->
+        <div class="bg-white p-6 rounded-xl shadow border-t-4 border-green-500">
+            <h3 class="text-lg font-semibold text-green-700 mb-4">🏅 Top Contributors</h3>
+            <ul class="space-y-2 text-sm">
+                @php
+                    $topUsers = \App\Models\User::withCount([
+                        'votes as upvotes_count' => function ($q) {
+                            $q->where('type', 'up');
+                        }
+                    ])->orderByDesc('upvotes_count')->take(5)->get();
+                @endphp
+
+                @forelse ($topUsers as $user)
+                    <li class="flex justify-between items-center">
+                        <span>{{ $user->name }} ({{ $user->upvotes_count }} upvotes)</span>
+                        <span class="text-xs px-2 py-1 rounded font-semibold text-green-800 bg-green-100">
+                            @if ($user->upvotes_count >= 100)
+                                🏆 Super Contributor
+                            @elseif ($user->upvotes_count >= 50)
+                                🎖️ Active Helper
+                            @elseif ($user->upvotes_count >= 10)
+                                💬 Community Member
+                            @else
+                                🌱 New Contributor
+                            @endif
+                        </span>
+                    </li>
+                @empty
+                    <li class="text-gray-500">No contributors yet.</li>
+                @endforelse
+            </ul>
+        </div>
+
+        <!-- Analytics -->
+        <div class="bg-white p-6 rounded-xl shadow border-t-4 border-purple-500">
+            <h3 class="text-lg font-bold text-purple-600 mb-3">📈 Problem Trends (Last 6 Months)</h3>
+            <canvas id="problemsChart" class="w-full h-64"></canvas>
+        </div>
 
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('problemsChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {!! json_encode($problemStats['months']) !!},
+            datasets: [{
+                label: 'Problems Reported',
+                data: {!! json_encode($problemStats['counts']) !!},
+                borderColor: 'rgba(99, 102, 241, 1)',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+</script>
+@endpush

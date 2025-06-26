@@ -46,5 +46,8 @@ class User extends Authenticatable
 {
     return $this->role === $role;
 }
-
+public function votes()
+{
+    return $this->hasMany(\App\Models\Vote::class);
+}
 }

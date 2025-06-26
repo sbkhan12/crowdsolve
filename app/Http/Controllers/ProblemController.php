@@ -107,4 +107,6 @@ class ProblemController extends Controller
 
         return redirect()->route('problems.show', $problem->id)->with('success', 'Problem updated by authority.');
     }
+    // Removed duplicate index() method to fix redeclaration error
+
 }

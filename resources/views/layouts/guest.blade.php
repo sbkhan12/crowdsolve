@@ -23,5 +23,6 @@
         <div class="font-sans text-black-900 antialiased">
             {{ $slot }}
         </div>
+        
     </body>
 </html>

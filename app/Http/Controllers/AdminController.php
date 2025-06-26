@@ -1,90 +1,150 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\User;
-use App\Models\Problem;
 
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Problem;
+use App\Models\Vote;
+use App\Models\Comment;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
 
 class AdminController extends Controller
 {
-    public function dashboard()
+   public function dashboard()
 {
+    $months = collect(range(0, 5))->map(function ($i) {
+        return now()->subMonths($i)->startOfMonth();
+    })->reverse();
+
+    $counts = $months->map(function ($month) {
+        return Problem::whereBetween('created_at', [
+            $month,
+            $month->copy()->endOfMonth()
+        ])->count();
+    });
+
     return view('admin.dashboard', [
-        'totalUsers' => \App\Models\User::count(),
-        'totalProblems' => \App\Models\Problem::count(),
-        'totalVotes' => \App\Models\Vote::count(),
-        'totalComments' => \App\Models\Comment::count(),
+        'totalUsers' => User::count(),
+        'totalProblems' => Problem::count(),
+        'totalVotes' => Vote::count(),
+        'totalComments' => Comment::count(),
+        'problemStats' => [
+            'months' => $months->map(fn($m) => $m->format('M Y')),
+            'counts' => $counts
+        ]
     ]);
 }
 
 
+    public function users(Request $request)
+    {
+        $query = User::query();
 
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
 
-public function users(Request $request)
-{
-    $query = User::query();
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
 
-    // Filter by role
-    if ($request->filled('role')) {
-        $query->where('role', $request->role);
+        $users = $query->orderBy('name')->paginate(10)->withQueryString();
+
+        return view('admin.users', compact('users'));
     }
-    // Filter by name search
-    if ($request->filled('search')) {
-        $query->where('name', 'like', '%' . $request->search . '%');
+
+    public function toggleBan(User $user)
+    {
+        $user->is_banned = !$user->is_banned;
+        $user->save();
+
+        return back()->with('success', 'User ' . ($user->is_banned ? 'banned' : 'unbanned') . ' successfully.');
     }
 
-    $users = $query->orderBy('name')->paginate(10)->withQueryString();
+    public function updateUserRole(Request $request, User $user)
+    {
+        $request->validate([
+            'role' => 'required|in:citizen,expert,authority,admin'
+        ]);
 
-    return view('admin.users', compact('users'));
-}
+        $user->role = $request->role;
+        $user->save();
 
-public function toggleBan(User $user)
-{
-    $user->is_banned = !$user->is_banned;
-    $user->save();
+        return back()->with('success', 'User role updated.');
+    }
 
-    return redirect()->back()->with('success', 'User ' . ($user->is_banned ? 'banned' : 'unbanned') . ' successfully.');
-}
+    public function problems()
+    {
+        $problems = Problem::with('user')->latest()->get();
+        $authorities = User::where('role', 'authority')->get();
 
-// ...existing code...
+        return view('admin.problems', compact('problems', 'authorities'));
+    }
 
-public function updateUserRole(Request $request, User $user)
-{
-    $request->validate(['role' => 'required|in:citizen,expert,authority,admin']);
+    public function assignProblem(Request $request, Problem $problem)
+    {
+        $request->validate([
+            'assigned_to' => 'required|string'
+        ]);
 
-    $user->role = $request->role;
-    $user->save();
+        $problem->assigned_to = $request->assigned_to;
+        $problem->save();
 
-    return back()->with('success', 'User role updated.');
-}
+        return back()->with('success', 'Problem assigned successfully.');
+    }
 
-public function problems()
-{
-    $problems = Problem::with('user')->latest()->get();
-    $authorities = User::where('role', 'authority')->get();
+    public function updateStatus(Request $request, Problem $problem)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,in_progress,resolved'
+        ]);
 
-    return view('admin.problems', compact('problems', 'authorities'));
-}
+        $problem->status = $request->status;
+        $problem->save();
 
-public function assignProblem(Request $request, Problem $problem)
-{
-    $request->validate(['assigned_to' => 'required|string']);
+        return back()->with('success', 'Problem status updated.');
+    }
 
-    $problem->assigned_to = $request->assigned_to;
-    $problem->save();
+    public function analytics()
+    {
+        // Load this in admin.analytics blade view
+        return view('admin.analytics', [
+            'problemTrend' => Problem::selectRaw('DATE(created_at) as date, count(*) as total')
+                ->groupBy('date')->orderBy('date')->get(),
+            'topUsers' => User::withCount('votes')->orderBy('votes_count', 'desc')->take(5)->get()
+        ]);
+    }
 
-    return back()->with('success', 'Problem assigned successfully.');
-}
+    public function reports()
+    {
+        // Assume a reports system is implemented, or add dummy content
+        return view('admin.reports', [
+            'problems' => Problem::with('user')->where('status', '!=', 'resolved')->get()
+        ]);
+    }
 
-public function updateStatus(Request $request, Problem $problem)
-{
-    $request->validate(['status' => 'required|in:pending,in_progress,resolved']);
+    // Optional: Reward Badge logic (for frontend use)
+    public function rewardBadges()
+    {
+        $users = User::withCount(['votes' => function ($q) {
+            $q->where('type', 'up');
+        }])->get();
 
-    $problem->status = $request->status;
-    $problem->save();
+        foreach ($users as $user) {
+            if ($user->votes_count >= 100) {
+                $user->badge = '🏆 Super Contributor';
+            } elseif ($user->votes_count >= 50) {
+                $user->badge = '🎖️ Active Helper';
+            } elseif ($user->votes_count >= 10) {
+                $user->badge = '💬 Community Member';
+            } else {
+                $user->badge = null;
+            }
+        }
 
-    return back()->with('success', 'Problem status updated.');
-}
-
+        return $users;
+    }
 }
